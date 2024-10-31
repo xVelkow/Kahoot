@@ -7,7 +7,15 @@ export const getUsers = async () => {
         const allUsers = await db.select().from(users);
         return allUsers;
     }catch(err){
-        console.log(err);
+        return err.message;
+    }
+}
+
+export const getUserById = async (id: number) => {
+    try{
+        const [user] = await db.select().from(users).where(eq(users.userId, id));
+        return user;
+    }catch(err){
         return err.message;
     }
 }
@@ -17,7 +25,6 @@ export const getUserByEmail = async (email: string) => {
         const [user] = await db.select().from(users).where(eq(users.userEmail, email));
         return user;
     }catch(err){
-        console.log(err);
         return err.message;
     }
 }
