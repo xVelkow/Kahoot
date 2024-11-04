@@ -1,13 +1,18 @@
 import express, { Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import "dotenv/config";
 
 import router from "./routes/index.route";
 
 const app: Express = express();
 
-app.use(cors());
+app.use(cors({
+    credentials: true,
+    origin: String(process.env.FRONTEND_URL),
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // express-session and connect-pg-simple setup
 import session from "express-session";
@@ -24,7 +29,7 @@ const pgPool = new Pool({
     database: String(process.env.DB_NAME),
 });
 
-// setting up the session middleware
+// Setting up session middleware
 app.use(session({
     secret: String(process.env.SESSION_SECRET),
     resave: false,
@@ -32,21 +37,22 @@ app.use(session({
     cookie: {
         maxAge: Number(process.env.SESSION_MAX_AGE),
         secure: false,
+        httpOnly: true,
     },
     store: new pgSession({
         pool: pgPool,
         tableName: "sessions",
     }),
-}))
+}));
 
-// setup passport and passport strategy
+// Passport setup
 import passport from "passport";
 import "./strategies/local.strategy";
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-
+// Routes
 app.use("/api", router);
 
 

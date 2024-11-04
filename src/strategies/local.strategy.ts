@@ -3,7 +3,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 
 import bcrypt from "bcryptjs";
 
-import { getUserByEmail, getUserById } from "../utilities/User.orm";
+import { deleteUserSession, getUserByEmail, getUserById, isUserLoggedIn } from "../utilities/User.orm";
 import { userSelect } from "../models/User.model";
 
 
@@ -17,23 +17,23 @@ export default passport.use(new LocalStrategy(
     { usernameField: "email" },
     async (email, password, done) => {
         try{
-            if(!email || !password){
-                return done(null, false);
-            }
+            
+            if(!email || !password) throw new Error("Email and password are required.");
 
             const user = await getUserByEmail(email);
-            if(!user){
-                return done(null, false);
+            if(!user) throw new Error("Incorrect credentials.");
+
+            if(await isUserLoggedIn(user.userId)){
+                const isUserDeleted = await deleteUserSession(user.userId);
+                if(!isUserDeleted) throw new Error("User session failed to delete.");
             }
 
-            if(!await bcrypt.compare(password, user.userPassword)){
-                return done(null, false);
-            }
+            if(!await bcrypt.compare(password, user.userPassword)) throw new Error("Incorrect credentials.");
 
             return done(null, user);
 
         }catch(err){
-            return done(err);
+            return done(err, false);
         }
     }
 ));

@@ -1,5 +1,5 @@
 import { db } from "../models/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { users } from "../models/User.model";
 
 export const getUsers = async () => {
@@ -26,5 +26,23 @@ export const getUserByEmail = async (email: string) => {
         return user;
     }catch(err){
         return err.message;
+    }
+}
+
+export const isUserLoggedIn = async (id: number) => {
+    try{
+        const count = Number((await db.execute(sql`SELECT COUNT(*) FROM sessions WHERE sess->'passport'->>'user' = ${id}`)).rows[0].count);
+        return !!count;
+    }catch(err){
+        return err.message;
+    }
+}
+
+export const deleteUserSession = async (id: number) => {
+    try{
+        await db.execute(sql`DELETE FROM sessions WHERE sess->'passport'->>'user' = ${id}`);
+        return true;
+    }catch(err){
+        return false;
     }
 }

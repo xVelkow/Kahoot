@@ -1,23 +1,23 @@
 import { Request, Response } from 'express';
+import passport from 'passport';
+
+import { userSelect } from '../models/User.model';
 
 const login = async (req: Request, res: Response) => {
-    try{
-        if(!req.user) throw new Error("Wrong credentials.");
-        res.status(200).json({ message: "Logged in successfully." });
-    }catch(err){
-        res.status(401).json({ message: err.message });
-    }
+    passport.authenticate('local', (err: Error | null, user: userSelect, info: { message: string }) => {
+        if(err) return res.status(401).json({ message: err.message });
+        if(!user) return res.status(401).json({ message: info?.message || "Unauthorized." });
+        req.logIn(user, err => {
+            if(err) return res.status(401).json({ message: err.message });
+            return res.status(200).json({ message: "Logged in successfully." });
+        });
+    })(req, res);
 };
 
 const loginStatus = async (req: Request, res: Response) => {
     try{
-        if(!req.user) throw new Error("Unauthorized.");
-        res.status(200).json({
-            session: req.session,
-            sessionID: req.sessionID,
-            message: "Logged in.",
-            user: req.user
-        });
+        if(req.isAuthenticated()) res.status(200).json({ authenticated: true });
+        else throw res.status(200).json({ authenticated: false });
     }catch(err){
         res.status(401).json({ message: err.message });
     }
